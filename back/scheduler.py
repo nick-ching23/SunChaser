@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from google.cloud import storage
 from collections import defaultdict
+from concurrent import futures
 import grpc
 import scheduler_pb2
 import scheduler_pb2_grpc
@@ -25,6 +26,21 @@ task_lock = threading.Lock()
 id_lock = threading.Lock()
 docker_lock = threading.Lock()
 storage_client = storage.Client()
+
+class SchedulerService(scheduler_pb2_grpc.SchedulerServiceServicer):
+    def ReportStatus(self, request, context):
+        #worker handling logic 
+        return scheduler_pb2.StatusResponse(message="Status received")
+
+def run_grpc_server():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    scheduler_pb2_grpc.add_SchedulerServiceServicer_to_server(SchedulerService(), server)
+
+    server_address = "0.0.0.0:50052"  # Scheduler listens on port 50052 for gRPC
+    server.add_insecure_port(server_address)
+
+    server.start()
+    server.wait_for_termination()
 
 class Task:
     def __init__(self, id = -1, batch = 0, dataset = None, start = 0, end = 0, partitioned = False, time = float('inf'), last = False):
@@ -241,7 +257,11 @@ def upload_dataset():
     except Exception as e:
         return jsonify({"error": f"Failed to upload dataset: {str(e)}"}), 500
 
+def run_flask():
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
 
 if __name__ == '__main__':
-    # app.run(debug=True)
+    grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
+    grpc_thread.start()
+    # run_flask
     pass

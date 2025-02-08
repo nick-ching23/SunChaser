@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package scheduler;
+
+service SchedulerService {
+  rpc ProcessTask(TaskRequest) returns (TaskResponse);
+
+  rpc ReportStatus(StatusRequest) returns (StatusResponse);
+}
+
+message TaskRequest {
+  string id = 1;               // Unique Task ID
+  int32 batch = 2;             // Batch size
+  string dataset = 3;          // Dataset link
+  float start = 4;             // Start position of the dataset
+  float end = 5;               // End position of the dataset
+  bool partitioned = 6;        // Whether dataset is partitioned
+  double time = 7;             // Timestamp of task creation
+  bool last = 8;               // Whether this is the last batch
+}
+
+message TaskResponse {
+  string message = 1;  // Confirmation message
+  bool success = 2;    // Whether the task was successfully received
+}
+
+message StatusRequest {
+  string worker_name = 1;         // Unique name or ID of the worker
+  string status = 2;              // Status (e.g., "completed", "failed")
+  string id = 3;                  // Unique Task ID
+  int32 batch = 4;                // Batch size
+  string dataset = 5;             // Dataset link
+  float start = 6;                // Start position of the dataset
+  float end = 7;                  // End position of the dataset
+  bool partitioned = 8;           // Whether dataset is partitioned
+  double time = 9;                // Timestamp of task creation
+  bool last = 10;                  // Whether this is the last batch
+  map<string, string> runtime_info = 11; // Additional runtime stats (e.g., CPU usage, memory)
+}
+
+message StatusResponse {
+  string message = 1;
+}
