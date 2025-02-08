@@ -43,8 +43,8 @@ def run_grpc_server():
     server.wait_for_termination()
 
 class Task:
-    def __init__(self, id = -1, batch = 0, dataset = None, start = 0, end = 0, partitioned = False, time = float('inf'), last = False):
-        self.id = id
+    def __init__(self, id = "", batch = 0, dataset = None, start = 0, end = 0, partitioned = False, time = float('inf'), last = False):
+        self.id = str(id)
         self.batch = batch
         self.dataset = dataset
         self.start = start
@@ -263,5 +263,8 @@ def run_flask():
 if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
     grpc_thread.start()
+    #test
+    task = Task()
+    send_task_to_worker("104.196.151.216", task)
     # run_flask
     pass
