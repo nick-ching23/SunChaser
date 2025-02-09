@@ -39,7 +39,7 @@ def delete_image(image_name):
     )
     print(f"Image {image_name} deleted successfully.")
 
-def process_and_push_docker_image(docker_file, filename, tag, registry_memory):
+def process_and_push_docker_image(docker_file, tag, registry_memory):
     """
     Processes a Docker .tar file, tags it, and pushes it to the specified registry.
     """

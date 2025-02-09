@@ -42,13 +42,6 @@ def run_grpc_server():
 
     server.start()
     server.wait_for_termination()
-
-
-task_dispatch_thread = threading.Thread(target=scheduling_utils.dispatch_tasks, daemon=True)
-task_dispatch_thread.start()
-schedule_thread = threading.Thread(target=scheduling_utils.schedule_tasks, daemon=True)
-schedule_thread.start()
-
     
 @app.route('/submit_task', methods=['POST'])
 def submit_task():
@@ -139,6 +132,10 @@ def run_flask():
 if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
     grpc_thread.start()
+    task_dispatch_thread = threading.Thread(target=scheduling_utils.dispatch_tasks, daemon=True)
+    task_dispatch_thread.start()
+    schedule_thread = threading.Thread(target=scheduling_utils.schedule_tasks, daemon=True)
+    schedule_thread.start()
     submit_task_test()
     #test
     # task = Task()

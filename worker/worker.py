@@ -11,7 +11,7 @@ registry_name = "us-docker.pkg.dev/sunchaser-450121"
 repo_name = "sun-chaser-docker-repo"
 
 def do_task(request):
-    docker_img_path = f'{registry_name}/{repo_name}:{request.id}'
+    docker_img_path = f'{registry_name}/{repo_name}/{request.id}:{request.id}'
     try:
         subprocess.run(f"docker pull {docker_img_path}", shell=True, check=True)
         # command = f"docker run --rm {docker_img_path} --batch_size {request.batch} 
