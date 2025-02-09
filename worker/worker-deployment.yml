@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-deployment
+spec:
+  replicas: 3  # Number of worker instances
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+        - name: worker
+          image: willma17/worker-service:latest  # Use your Docker image
+          ports:
+            - containerPort: 50051
+          env:
+            - name: SCHEDULER_ADDRESS
+              value: "192.168.1.100:50052"  # Address of the local scheduler
