@@ -1,7 +1,7 @@
 import subprocess
 import json
 
-registry_name = "sunchaser-450121"
+registry_name = "us-docker.pkg.dev/sunchaser-450121"
 repo_name = "sun-chaser-docker-repo"
 def get_image_digest(image_name):
     """
@@ -69,4 +69,5 @@ def process_and_push_docker_image(docker_file, tag, registry_memory):
         return {"message": "Docker image pushed successfully!", "image": full_image_name}
 
     except Exception as e:
+        
         return {"error": f"Failed to process Docker image: {str(e)}"}

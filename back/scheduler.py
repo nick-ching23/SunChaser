@@ -75,7 +75,8 @@ def submit_task():
         ids.add(id)
         timestamp = time.time()
     with docker_lock:
-        process_and_push_docker_image(docker_file, id, registry_memory)
+        with docker_file.stream as file:
+            print(process_and_push_docker_image(file, id, registry_memory))
     with file_lock:
         remaining_batches_per_task[id] = num_batches
     with scheduling_utils.task_lock:
@@ -109,8 +110,6 @@ def submit_file():
         os.remove(f"{id}_output_archive.zip")
 
 def submit_task_test():  
-    with open("examples/batch-inference.tar", "r") as file:
-        docker_file = file.read()
     batch_size = 10
     num_batches = 1
     should_split = False
@@ -121,7 +120,8 @@ def submit_task_test():
         ids.add(id)
         timestamp = time.time()
     with docker_lock:
-        process_and_push_docker_image(docker_file, id, registry_memory)
+        with open("../examples/small_test.tar", "rb") as file:
+            print(process_and_push_docker_image(file, id, registry_memory))
     with file_lock:
         remaining_batches_per_task[id] = num_batches
     with scheduling_utils.task_lock:
@@ -131,7 +131,7 @@ def submit_task_test():
             else:
                 task = Task(id, batch_size, 0, 1, False, timestamp)
             scheduling_utils.unallocated_tasks.push(task)
-    return jsonify({"message": "Task submitted", "task_id": task.id}), 202
+    print("Task complete")
 
 def run_flask():
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

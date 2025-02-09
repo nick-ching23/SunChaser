@@ -1,6 +1,5 @@
 import grpc
 from concurrent import futures
-from gcs import download_blob
 import scheduler_pb2
 import scheduler_pb2_grpc
 import time
@@ -8,7 +7,7 @@ import os
 import subprocess
 
 SCHEDULER_ADDRESS = os.getenv("SCHEDULER_ADDRESS", "192.168.119.1:50052") 
-registry_name = "sunchaser-450121"
+registry_name = "us-docker.pkg.dev/sunchaser-450121"
 repo_name = "sun-chaser-docker-repo"
 
 def do_task(request):
@@ -18,8 +17,8 @@ def do_task(request):
         # command = f"docker run --rm {docker_img_path} --batch_size {request.batch} 
         #         --start {request.start} --end {request.end} 
         #         --partitioned {request.partitioned} --output {request.id}_{request.start}_{request.end}_"
-        command = f"docker run --rm {docker_img_path} --batch_size {request.batch} " \
-                  f"--start {request.start} --end {request.end} --output {request.id}_{request.start}_{request.end}_"
+        command = {f"docker run --rm {docker_img_path} --batch_size {request.batch} " 
+                  f"--start {request.start} --end {request.end} --output {request.id}_{request.start}_{request.end}_"}
         subprocess.run(command, shell=True, check=True)
         return 0
     except subprocess.CalledProcessError as e:
