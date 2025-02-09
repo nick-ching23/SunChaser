@@ -17,7 +17,7 @@ def do_task(request):
         subprocess.run(f"docker pull {docker_img_path}", shell=True, check=True)
         command = f"docker run --rm {docker_img_path} --batch {request.batch} --dataset {request.dataset} 
                 --start {request.start} --end {request.end} 
-                --partitioned {request.partitioned} --output outputfile_{request.id}"
+                --partitioned {request.partitioned} --output {request.id}_{request.start}_{request.end}_"
         subprocess.run(command, shell=True, check=True)
         return 0
     except subprocess.CalledProcessError as e:
@@ -33,14 +33,14 @@ class WorkerService(scheduler_pb2_grpc.SchedulerServiceServicer):
         status = (do_task(request) == 0)
         end_time = time.time()
 
-        report_status_to_scheduler("worker-node", request.id, status, request.last, begin_time, end_time)
+        report_status_to_scheduler("worker-node", request.id, status, begin_time, end_time)
 
         return scheduler_pb2.TaskResponse(
             message=f"Task {request.id} processed successfully.",
             success=True
         )
 
-def report_status_to_scheduler(worker_name, task_id, status, last, begin_time, end_time):
+def report_status_to_scheduler(worker_name, task_id, status, begin_time, end_time):
     """
     Worker reports task status to the scheduler.
     """
@@ -52,7 +52,6 @@ def report_status_to_scheduler(worker_name, task_id, status, last, begin_time, e
             worker_name=worker_name,
             id=task_id,
             status=status,
-            last=last,
             begin_time=begin_time,
             end_time=end_time,
             runtime_info={"cpu_usage": "25%", "memory": "1.5GB"}  # Example stats
