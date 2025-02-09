@@ -1,17 +1,21 @@
 import threading
 import subprocess
 import time 
-import grpc
 from utils import PriorityQueue
 from collections import defaultdict
-import scheduler_pb2
-import scheduler_pb2_grpc
+import scheduler
 
 task_lock = threading.Lock()
 id_lock = threading.Lock()
 
 workers = [{'name': "south_carolina", 
-            'address': "34.138.214.204",
+            'context': "gke_sunchaser-450121_us-east1-b_sun-chaser-south-carolina",
+            'free': True}, 
+            {'name': "texas", 
+            'context': "gke_sunchaser-450121_us-south1-a_sun-chaser-texas",
+            'free': True}, 
+            {'name': "oregon", 
+            'context': "gke_sunchaser-450121_us-west1-a_sun-chaser-oregon",
             'free': True}]
 task_queues = defaultdict(PriorityQueue)
 unallocated_tasks = PriorityQueue()
@@ -25,32 +29,13 @@ def run_command(command):
         print(f"Command failed: {command}\nError: {e}")
         raise e
     
-def send_task_to_worker(worker_address, worker_name, task):
-    """
-    Sends a task to a worker using gRPC.
-    """
-    try:
-        # Connect to gRPC server
-        channel = grpc.insecure_channel(f"{worker_address}:50051")
-        stub = scheduler_pb2_grpc.SchedulerServiceStub(channel)
-
-        # Create task request
-        request = scheduler_pb2.TaskRequest(
-            id=task.id,
-            batch=task.batch,
-            start=task.start,
-            end=task.end,
-            partitioned=task.partitioned,
-            time = task.time,
-            worker_name = worker_name
-        )
-
-        # Send request
-        response = stub.ProcessTask.future(request)
-        return True
-    except grpc.RpcError as e:
-        print(f"gRPC Error: {e.details()}")
-        return False
+def send_task_to_worker(worker_id, task):
+    cluster_switch = ["kubectl", "config", "use-context" , workers[worker_id]['context']]
+    run_command(cluster_switch)
+    command = ["kubectl", "create", "job", "worker-job", f"--image=willma17/{task.id}:{task.id}", 
+               "--", "--batch_size", str(task.batch), "--output", f"{task.id}_{task.p_id}_{worker_id}_"]
+    run_command(command)
+    scheduler.start_and_end_times[(task.id, task.p_id)] = time.time()
     
 def dispatch_tasks():
     """
@@ -61,7 +46,7 @@ def dispatch_tasks():
             for worker_id in task_queues:
                 if workers[worker_id]['free'] and len(task_queues[worker_id]) > 0:
                     task = task_queues[worker_id].pop()
-                    success = send_task_to_worker(workers[worker_id]['address'], workers[worker_id]['name'], task)
+                    success = send_task_to_worker(worker_id, task)
                     if success:
                         workers[worker_id]['free'] = False
                         print(f"Task sent successfully to {workers[worker_id]['name']}")
@@ -70,12 +55,15 @@ def dispatch_tasks():
         time.sleep(2)
 
 def schedule_tasks():
-    #cyclic scheduling for now
-    prev_worker_id = 0
     while True:
+        recent_info = scheduler.retriever.info[-1]
+        best_region = min(recent_info, key=lambda k: recent_info[k])
+        for worker_id in task_queues:
+            if workers[worker_id]['name'] == best_region:
+                best_worker = worker_id
         with task_lock:
             while len(unallocated_tasks) > 0:
                 task = unallocated_tasks.pop()
-                task_queues[prev_worker_id].push(task)
-                prev_worker_id = (prev_worker_id + 1) % len(workers)
+                task_queues[best_worker].push(task)
         time.sleep(2)
+    

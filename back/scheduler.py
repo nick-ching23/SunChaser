@@ -1,52 +1,46 @@
 from flask import Flask, request, jsonify
 from utils import Task
-from docker_utils import delete_image, process_and_push_docker_image
-from concurrent import futures
-import os 
+from carbon import carbon_info_retriever
 import scheduling_utils
-import grpc
-import scheduler_pb2
-import scheduler_pb2_grpc
-import json
 import time
 import threading
-import shutil 
 import random 
+import subprocess
+import os
+import shutil
 
 app = Flask(__name__)
 
+start_and_end_times = {}
 remaining_batches_per_task = {}
-registry_name = "sunchaser-450121"
-repo_name = "sun-chaser-docker-repo"
-registry_memory = {}
 ids = set()
+retriever = carbon_info_retriever.CarbonInfoRetriever()
 
 docker_lock = threading.Lock()
 file_lock = threading.Lock()
 
-class SchedulerService(scheduler_pb2_grpc.SchedulerServiceServicer):
-    def ReportStatus(self, request, context):
-        with scheduling_utils.task_lock:
-            for worker in scheduling_utils.workers:
-                if worker['name'] == request.worker_name:
-                    worker['free'] = True
-                    break
-        if not request.status:
-            print("Error: task not successfully completed")
-        else:
-            time_diff = request.end_time - request.begin_time
-            #do something with this information 
-        return scheduler_pb2.StatusResponse(message="Status received")
+def load_and_push_docker_image(tar_path, image_tag):
+    try:
+        load_output = subprocess.run(["docker", "load", "-i", tar_path], check=True, capture_output=True, text=True)
 
-def run_grpc_server():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    scheduler_pb2_grpc.add_SchedulerServiceServicer_to_server(SchedulerService(), server)
+        loaded_image = None
+        for line in load_output.stdout.splitlines():
+            if "Loaded image" in line:
+                loaded_image = line.split(": ")[1].strip()
+                break
 
-    server_address = "0.0.0.0:50052"  # Scheduler listens on port 50052 for gRPC
-    server.add_insecure_port(server_address)
+        if not loaded_image:
+            print("Failed to determine the loaded image name.")
+            return False
 
-    server.start()
-    server.wait_for_termination()
+        subprocess.run(["docker", "tag", loaded_image, image_tag], check=True)
+
+        subprocess.run(["docker", "push", image_tag], check=True)
+
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error: {e}")
+        return False
     
 @app.route('/submit_task', methods=['POST'])
 def submit_task():
@@ -62,88 +56,64 @@ def submit_task():
     
     docker_file = request.files['dockerfile']
     
+    tar_path = os.path.join("/tmp", f"{docker_file.filename}")
+    docker_file.save(tar_path)
+
     batch_size = json_data['batch_size']
     num_batches = json_data['num_batches']
-    should_split = json_data['should_split']
-    
+    should_split = False
+
     with scheduling_utils.id_lock:
         id = random.randint(0, 99999999)
         while id in ids:
             id = random.randint(0, 99999999)
         ids.add(id)
         timestamp = time.time()
-    with docker_lock:
-        with docker_file.stream as file:
-            print(process_and_push_docker_image(file, id, registry_memory))
+    image_tag = f"willma17/{id}:{id}"
+    load_and_push_docker_image(tar_path, image_tag)
     with file_lock:
         remaining_batches_per_task[id] = num_batches
     with scheduling_utils.task_lock:
         for i in range(num_batches):
             if should_split:
-                task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp)
+                task = Task(id, batch_size, i, i / num_batches, (i + 1) / num_batches, True, timestamp)
             else:
-                task = Task(id, batch_size, 0, 1, False, timestamp)
+                task = Task(id, batch_size, i, 0, 1, False, timestamp)
             scheduling_utils.unallocated_tasks.push(task)
     return jsonify({"message": "Task submitted", "task_id": task.id}), 202
 
     
 @app.route('/submit_file', methods=['POST'])
 def submit_file():
-    # output_file = request.files['output_file']
-    # filename = output_file.filename
-    # id, start, end, extension = filename.split("_")
-    # if not os.path.exists(f"{id}_output"):
-    #     os.makedirs(f"{id}_output")
-    # with file_lock:
-    #     remaining_batches_per_task[int(id)] -= 1
-    # output_file.save(f"{id}_output/{filename}")
-    # if remaining_batches_per_task[int(id)] == 0:
-    #     with docker_lock:
-    #         delete_image(registry_memory[int(id)])
-    #         del registry_memory[int(id)]
-    #     shutil.make_archive(f"{id}_output_archive", 'zip', f"{id}_output")
-    #     #send this to the user 
-    #     shutil.rmtree(f"{id}_output")
-    #     os.remove(f"{id}_output_archive.zip")
-    print("HI MOTHER... :D")
-    return jsonify({"message": "Got it!"}), 200
-
-def submit_task_test():  
-    batch_size = 10
-    num_batches = 1
-    should_split = False
-    with scheduling_utils.id_lock:
-        id = random.randint(0, 99999999)
-        while id in ids:
-            id = random.randint(0, 99999999)
-        ids.add(id)
-        timestamp = time.time()
-    with docker_lock:
-        with open("../examples/small_test.tar", "rb") as file:
-            print(process_and_push_docker_image(file, id, registry_memory))
+    end_time = time.time()
+    output_file = request.files['output_file']
+    filename = output_file.filename
+    id, p_id, worker_id, _ = filename.split("_")
+    time_diff = end_time - start_and_end_times[(int(id), int(p_id))] 
+    #do something with this time_diff
+    scheduling_utils.workers[worker_id]['free'] = True
+    if not os.path.exists(f"{id}_output"):
+        os.makedirs(f"{id}_output")
     with file_lock:
-        remaining_batches_per_task[id] = num_batches
-    with scheduling_utils.task_lock:
-        for i in range(num_batches):
-            if should_split:
-                task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp)
-            else:
-                task = Task(id, batch_size, 0, 1, False, timestamp)
-            scheduling_utils.unallocated_tasks.push(task)
-    print("Task complete")
+        remaining_batches_per_task[int(id)] -= 1
+    output_file.save(f"{id}_output/{filename}")
+    if remaining_batches_per_task[int(id)] == 0:
+        with docker_lock:
+            subprocess.run(["docker", "rmi", "-f", f"willma17/{id}:{id}"])
+            #eventually want some code that cleans the dockerhub
+        shutil.make_archive(f"{id}_output_archive", 'zip', f"{id}_output")
+        #send this to the user 
+        # shutil.rmtree(f"{id}_output")
+        # os.remove(f"{id}_output_archive.zip")
+    return jsonify({"message": "Got it!"}), 200
 
 def run_flask():
     app.run(host="0.0.0.0", port=8080, debug=True, use_reloader=False)
 
 if __name__ == '__main__':
-    grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
-    grpc_thread.start()
     task_dispatch_thread = threading.Thread(target=scheduling_utils.dispatch_tasks, daemon=True)
     task_dispatch_thread.start()
     schedule_thread = threading.Thread(target=scheduling_utils.schedule_tasks, daemon=True)
     schedule_thread.start()
-    submit_task_test()
-    #test
-    # task = Task()
-    # send_task_to_worker("104.196.151.216", task)
+    retriever.start_monitoring()
     run_flask()
