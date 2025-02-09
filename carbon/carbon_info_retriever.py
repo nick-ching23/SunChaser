@@ -27,10 +27,3 @@ class CarbonInfoRetriever:
         self.running = False
         if self.thread:
             self.thread.join()
-
-# Usage
-retriever = CarbonInfoRetriever()
-retriever.start_monitoring()  # Start collecting data every 2 minutes
-
-# To stop it later
-# retriever.stop_monitoring()
