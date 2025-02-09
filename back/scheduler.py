@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from utils import Task
-from carbon import carbon_info_retriever
+import carbon_info_retriever
 import scheduling_utils
 import time
 import threading
@@ -34,7 +34,6 @@ def load_and_push_docker_image(tar_path, image_tag):
             return False
 
         subprocess.run(["docker", "tag", loaded_image, image_tag], check=True)
-
         subprocess.run(["docker", "push", image_tag], check=True)
 
         return True
@@ -50,19 +49,14 @@ def submit_task():
     if 'dockerfile' not in request.files:
         return jsonify({"error": "Missing files. Please upload Dockerfile."}), 400
 
-    json_data = request.get_json()
-    if not json_data:
-        return jsonify({"error": "Missing JSON configuration"}), 400
-    
+    # read form fields instead of JSON
+    num_batches = request.form.get('numBatches', type=int)
+    batch_size = request.form.get('batchSize', type=int)
+
     docker_file = request.files['dockerfile']
-    
-    tar_path = os.path.join("/tmp", f"{docker_file.filename}")
+    tar_path = os.path.join("/tmp", docker_file.filename)
     docker_file.save(tar_path)
-
-    batch_size = json_data['batch_size']
-    num_batches = json_data['num_batches']
-    should_split = False
-
+    
     with scheduling_utils.id_lock:
         id = random.randint(0, 99999999)
         while id in ids:
@@ -70,16 +64,19 @@ def submit_task():
         ids.add(id)
         timestamp = time.time()
     image_tag = f"willma17/{id}:{id}"
+    
     load_and_push_docker_image(tar_path, image_tag)
+    
     with file_lock:
         remaining_batches_per_task[id] = num_batches
     with scheduling_utils.task_lock:
         for i in range(num_batches):
-            if should_split:
-                task = Task(id, batch_size, i, i / num_batches, (i + 1) / num_batches, True, timestamp)
-            else:
-                task = Task(id, batch_size, i, 0, 1, False, timestamp)
+            # if should_split:
+            #     task = Task(id, batch_size, i, i / num_batches, (i + 1) / num_batches, True, timestamp)
+            # else:
+            task = Task(id, batch_size, i, 0, 1, False, timestamp)
             scheduling_utils.unallocated_tasks.push(task)
+    
     return jsonify({"message": "Task submitted", "task_id": task.id}), 202
 
     

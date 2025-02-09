@@ -56,6 +56,11 @@ def dispatch_tasks():
 
 def schedule_tasks():
     while True:
+        
+        if not scheduler.retriever.info:
+            time.sleep(1)
+            continue        
+        
         recent_info = scheduler.retriever.info[-1]
         best_region = min(recent_info, key=lambda k: recent_info[k])
         for worker_id in task_queues:
