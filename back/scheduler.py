@@ -55,40 +55,37 @@ def submit_task():
     """
     API to accept JSON configuration and a Dockerfile.
     """
-    if 'config' not in request.files or 'dockerfile' not in request.files:
-        return jsonify({"error": "Missing files. Please upload both config.json and Dockerfile."}), 400
+    if 'dockerfile' not in request.files:
+        return jsonify({"error": "Missing files. Please upload Dockerfile."}), 400
 
-    config_file = request.files['config']
+    json_data = request.get_json()
+    if not json_data:
+        return jsonify({"error": "Missing JSON configuration"}), 400
+    
     docker_file = request.files['dockerfile']
-
-    try:
-        config_content = config_file.read().decode('utf-8')
-        config_dict = json.loads(config_content)
-        
-        batch_size = config_dict['batch_size']
-        num_batches = config_dict['num_batches']
-        should_split = config_dict['should_split']
-        
-        with scheduling_utils.id_lock:
+    
+    batch_size = json_data['batch_size']
+    num_batches = json_data['num_batches']
+    should_split = json_data['should_split']
+    
+    with scheduling_utils.id_lock:
+        id = random.randint(0, 99999999)
+        while id in ids:
             id = random.randint(0, 99999999)
-            while id in ids:
-                id = random.randint(0, 99999999)
-            ids.add(id)
-            timestamp = time.time()
-        with docker_lock:
-            process_and_push_docker_image(docker_file, id, registry_memory)
-        with file_lock:
-            remaining_batches_per_task[id] = num_batches
-        with scheduling_utils.task_lock:
-            for i in range(num_batches):
-                if should_split:
-                    task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp)
-                else:
-                    task = Task(id, batch_size, 0, 1, False, timestamp)
-                scheduling_utils.unallocated_tasks.push(task)
-        return jsonify({"message": "Task submitted", "task_id": task.id}), 202
-    except json.JSONDecodeError:
-        return jsonify({"error": "Invalid JSON file"}), 400
+        ids.add(id)
+        timestamp = time.time()
+    with docker_lock:
+        process_and_push_docker_image(docker_file, id, registry_memory)
+    with file_lock:
+        remaining_batches_per_task[id] = num_batches
+    with scheduling_utils.task_lock:
+        for i in range(num_batches):
+            if should_split:
+                task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp)
+            else:
+                task = Task(id, batch_size, 0, 1, False, timestamp)
+            scheduling_utils.unallocated_tasks.push(task)
+    return jsonify({"message": "Task submitted", "task_id": task.id}), 202
 
 
     
@@ -111,14 +108,39 @@ def submit_file():
         shutil.rmtree(f"{id}_output")
         os.remove(f"{id}_output_archive.zip")
 
+def submit_task_test():  
+    with open("examples/batch-inference.tar", "r") as file:
+        docker_file = file.read()
+    batch_size = 10
+    num_batches = 1
+    should_split = False
+    with scheduling_utils.id_lock:
+        id = random.randint(0, 99999999)
+        while id in ids:
+            id = random.randint(0, 99999999)
+        ids.add(id)
+        timestamp = time.time()
+    with docker_lock:
+        process_and_push_docker_image(docker_file, id, registry_memory)
+    with file_lock:
+        remaining_batches_per_task[id] = num_batches
+    with scheduling_utils.task_lock:
+        for i in range(num_batches):
+            if should_split:
+                task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp)
+            else:
+                task = Task(id, batch_size, 0, 1, False, timestamp)
+            scheduling_utils.unallocated_tasks.push(task)
+    return jsonify({"message": "Task submitted", "task_id": task.id}), 202
+
 def run_flask():
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
 
 if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
     grpc_thread.start()
+    submit_task_test()
     #test
     # task = Task()
     # send_task_to_worker("104.196.151.216", task)
     # run_flask()
-    pass

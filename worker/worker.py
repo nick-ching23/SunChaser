@@ -15,9 +15,11 @@ def do_task(request):
     docker_img_path = f'{registry_name}/{repo_name}:{request.id}'
     try:
         subprocess.run(f"docker pull {docker_img_path}", shell=True, check=True)
-        command = f"docker run --rm {docker_img_path} --batch {request.batch} --dataset {request.dataset} 
-                --start {request.start} --end {request.end} 
-                --partitioned {request.partitioned} --output {request.id}_{request.start}_{request.end}_"
+        # command = f"docker run --rm {docker_img_path} --batch_size {request.batch} 
+        #         --start {request.start} --end {request.end} 
+        #         --partitioned {request.partitioned} --output {request.id}_{request.start}_{request.end}_"
+        command = f"docker run --rm {docker_img_path} --batch_size {request.batch} " \
+                  f"--start {request.start} --end {request.end} --output {request.id}_{request.start}_{request.end}_"
         subprocess.run(command, shell=True, check=True)
         return 0
     except subprocess.CalledProcessError as e:
