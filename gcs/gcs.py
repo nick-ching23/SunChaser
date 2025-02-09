@@ -30,8 +30,28 @@ def download_blob(bucket_name, source_blob_name, destination_file_name):
         )
     )
 
+from google.cloud import storage
 
-# bucket_name = "sun-chaser-gcs"
-# source_file_name = "../../Mnist.py"
-# destination_blob_name = "Mnist.py"
-# download_blob(bucket_name, source_file_name, destination_blob_name)
+
+def delete_blob(bucket_name, blob_name):
+    """Deletes a blob from the bucket."""
+
+    storage_client = storage.Client()
+
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    generation_match_precondition = None
+
+    blob.reload()
+    generation_match_precondition = blob.generation
+
+    blob.delete(if_generation_match=generation_match_precondition)
+
+    print(f"Blob {blob_name} deleted.")
+
+
+
+bucket_name = "sun-chaser-gcs"
+source_file_name = "../../Mnist.py"
+destination_blob_name = "Mnist.py"
+delete_blob(bucket_name, destination_blob_name)
