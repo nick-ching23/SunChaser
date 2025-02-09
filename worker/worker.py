@@ -34,7 +34,7 @@ class WorkerService(scheduler_pb2_grpc.SchedulerServiceServicer):
         status = (do_task(request) == 0)
         end_time = time.time()
 
-        report_status_to_scheduler("worker-node", request.id, status, begin_time, end_time)
+        report_status_to_scheduler(request.worker_name, request.id, status, begin_time, end_time)
 
         return scheduler_pb2.TaskResponse(
             message=f"Task {request.id} processed successfully.",
