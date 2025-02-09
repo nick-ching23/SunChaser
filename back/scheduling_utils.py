@@ -25,7 +25,7 @@ def run_command(command):
         print(f"Command failed: {command}\nError: {e}")
         raise e
     
-def send_task_to_worker(worker_address, task):
+def send_task_to_worker(worker_address, worker_name, task):
     """
     Sends a task to a worker using gRPC.
     """
@@ -41,14 +41,13 @@ def send_task_to_worker(worker_address, task):
             start=task.start,
             end=task.end,
             partitioned=task.partitioned,
-            time = task.time
+            time = task.time,
+            worker_name = worker_name
         )
 
         # Send request
-        response = stub.ProcessTask(request)
-        print(f"Response from {worker_address}: {response.message}")
-
-        return response.success
+        response = stub.ProcessTask.future(request)
+        return True
     except grpc.RpcError as e:
         print(f"gRPC Error: {e.details()}")
         return False
@@ -62,13 +61,13 @@ def dispatch_tasks():
             for worker_id in task_queues:
                 if workers[worker_id]['free'] and len(task_queues[worker_id]) > 0:
                     task = task_queues[worker_id].pop()
-                    success = send_task_to_worker(workers[worker_id]['address'], task)
+                    success = send_task_to_worker(workers[worker_id]['address'], workers[worker_id]['name'], task)
                     if success:
                         workers[worker_id]['free'] = False
                         print(f"Task sent successfully to {workers[worker_id]['name']}")
                     else:
                         print(f"Failed to send task to {workers[worker_id]['name']}")
-        time.sleep(10)
+        time.sleep(2)
 
 def schedule_tasks():
     #cyclic scheduling for now
@@ -79,4 +78,4 @@ def schedule_tasks():
                 task = unallocated_tasks.pop()
                 task_queues[prev_worker_id].push(task)
                 prev_worker_id = (prev_worker_id + 1) % len(workers)
-        time.sleep(10)
+        time.sleep(2)

@@ -26,6 +26,11 @@ file_lock = threading.Lock()
 
 class SchedulerService(scheduler_pb2_grpc.SchedulerServiceServicer):
     def ReportStatus(self, request, context):
+        with scheduling_utils.task_lock:
+            for worker in scheduling_utils.workers:
+                if worker['name'] == request.worker_name:
+                    worker['free'] = True
+                    break
         if not request.status:
             print("Error: task not successfully completed")
         else:
