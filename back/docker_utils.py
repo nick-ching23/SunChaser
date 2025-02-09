@@ -39,7 +39,7 @@ def delete_image(image_name):
     )
     print(f"Image {image_name} deleted successfully.")
 
-def process_and_push_docker_image(docker_file, tag, registry_memory):
+def process_and_push_docker_image(docker_file, filename, tag, registry_memory):
     """
     Processes a Docker .tar file, tags it, and pushes it to the specified registry.
     """
@@ -59,7 +59,7 @@ def process_and_push_docker_image(docker_file, tag, registry_memory):
         if not image_id:
             return {"error": "Failed to load Docker image from the tar file"}
         
-        full_image_name = f"{registry_name}/{repo_name}:{tag}"
+        full_image_name = f"{registry_name}/{repo_name}/{tag}:{tag}"
         subprocess.run(f"docker tag {image_id} {full_image_name}", shell=True, check=True)
 
         subprocess.run(f"docker push {full_image_name}", shell=True, check=True)
