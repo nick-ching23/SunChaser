@@ -11,7 +11,7 @@ task_lock = threading.Lock()
 id_lock = threading.Lock()
 
 workers = [{'name': "south_carolina", 
-            'address': "104.196.151.216",
+            'address': "34.138.214.204",
             'free': True}]
 task_queues = defaultdict(PriorityQueue)
 unallocated_tasks = PriorityQueue()

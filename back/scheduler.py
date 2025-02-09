@@ -86,26 +86,27 @@ def submit_task():
             scheduling_utils.unallocated_tasks.push(task)
     return jsonify({"message": "Task submitted", "task_id": task.id}), 202
 
-
     
 @app.route('/submit_file', methods=['POST'])
 def submit_file():
-    output_file = request.files['output_file']
-    filename = output_file.filename
-    id, start, end, extension = filename.split("_")
-    if not os.path.exists(f"{id}_output"):
-        os.makedirs(f"{id}_output")
-    with file_lock:
-        remaining_batches_per_task[int(id)] -= 1
-    output_file.save(f"{id}_output/{filename}")
-    if remaining_batches_per_task[int(id)] == 0:
-        with docker_lock:
-            delete_image(registry_memory[int(id)])
-            del registry_memory[int(id)]
-        shutil.make_archive(f"{id}_output_archive", 'zip', f"{id}_output")
-        #send this to the user 
-        shutil.rmtree(f"{id}_output")
-        os.remove(f"{id}_output_archive.zip")
+    # output_file = request.files['output_file']
+    # filename = output_file.filename
+    # id, start, end, extension = filename.split("_")
+    # if not os.path.exists(f"{id}_output"):
+    #     os.makedirs(f"{id}_output")
+    # with file_lock:
+    #     remaining_batches_per_task[int(id)] -= 1
+    # output_file.save(f"{id}_output/{filename}")
+    # if remaining_batches_per_task[int(id)] == 0:
+    #     with docker_lock:
+    #         delete_image(registry_memory[int(id)])
+    #         del registry_memory[int(id)]
+    #     shutil.make_archive(f"{id}_output_archive", 'zip', f"{id}_output")
+    #     #send this to the user 
+    #     shutil.rmtree(f"{id}_output")
+    #     os.remove(f"{id}_output_archive.zip")
+    print("HI MOTHER... :D")
+    return jsonify({"message": "Got it!"}), 200
 
 def submit_task_test():  
     batch_size = 10

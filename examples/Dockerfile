@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/
 COPY batch_inference.py /app/
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir requests
+# RUN pip install --no-cache-dir -r requirements.txt
 
 RUN mkdir -p /app/data /app/output
 
