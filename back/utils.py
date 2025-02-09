@@ -1,9 +1,10 @@
 import heapq
 
 class Task:
-    def __init__(self, id = -1, batch = 0, start = 0, end = 0, partitioned = False, time = float('inf')):
+    def __init__(self, id = -1, batch = 0, p_id = -1, start = 0, end = 0, partitioned = False, time = float('inf')):
         self.id = id
         self.batch = batch
+        self.p_id = p_id
         self.start = start
         self.end = end
         self.partitioned = partitioned
@@ -23,5 +24,3 @@ class PriorityQueue:
 
     def __len__(self):
         return len(self.queue)
-
-#workerid
