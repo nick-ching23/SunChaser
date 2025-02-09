@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: worker
-          image: willma17/worker-service:latest  # Your Docker image
+          image: willma17/worker-service:latest1  # Your Docker image
           imagePullPolicy: Always
           ports:
             - containerPort: 50051

@@ -6,7 +6,7 @@ import time
 import os
 import subprocess
 
-SCHEDULER_ADDRESS = os.getenv("SCHEDULER_ADDRESS", "192.168.119.1:50052") 
+SCHEDULER_ADDRESS = os.getenv("SCHEDULER_ADDRESS", "10.0.9.79:50052") 
 registry_name = "us-docker.pkg.dev/sunchaser-450121"
 repo_name = "sun-chaser-docker-repo"
 

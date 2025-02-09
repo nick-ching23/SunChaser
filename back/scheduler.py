@@ -140,4 +140,4 @@ if __name__ == '__main__':
     #test
     # task = Task()
     # send_task_to_worker("104.196.151.216", task)
-    # run_flask()
+    run_flask()
