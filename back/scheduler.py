@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from collections import defaultdict
 from utils import Task
 import scheduling_utils
 import time
@@ -11,7 +10,7 @@ import shutil
 
 app = Flask(__name__)
 
-start_and_end_times = defaultdict(float)
+start_and_end_times = {}
 remaining_batches_per_task = {}
 ids = set()
 
@@ -60,7 +59,6 @@ def submit_task():
 
     batch_size = json_data['batch_size']
     num_batches = json_data['num_batches']
-    # should_split = json_data['should_split']
     should_split = False
 
     with scheduling_utils.id_lock:
@@ -103,8 +101,8 @@ def submit_file():
             #eventually want some code that cleans the dockerhub
         shutil.make_archive(f"{id}_output_archive", 'zip', f"{id}_output")
         #send this to the user 
-        shutil.rmtree(f"{id}_output")
-        os.remove(f"{id}_output_archive.zip")
+        # shutil.rmtree(f"{id}_output")
+        # os.remove(f"{id}_output_archive.zip")
     return jsonify({"message": "Got it!"}), 200
 
 def run_flask():

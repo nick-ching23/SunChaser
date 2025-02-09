@@ -33,8 +33,7 @@ def send_task_to_worker(worker_id, task):
     cluster_switch = ["kubectl", "config", "use-context" , workers[worker_id]['context']]
     run_command(cluster_switch)
     command = ["kubectl", "create", "job", "worker-job", f"--image=willma17/{task.id}:{task.id}", 
-               "--", "--batch_size", str(task.batch), "--output", f"{task.id}_", "--pid", str(task.p_id),
-               "--worker", str(worker_id)]
+               "--", "--batch_size", str(task.batch), "--output", f"{task.id}_{task.p_id}_{worker_id}_"]
     run_command(command)
     scheduler.start_and_end_times[(task.id, task.p_id)] = time.time()
     
