@@ -127,7 +127,7 @@ def submit_task_test():
     print("Task complete")
 
 def run_flask():
-    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=8080, debug=True, use_reloader=False)
 
 if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)

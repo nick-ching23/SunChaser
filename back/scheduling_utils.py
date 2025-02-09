@@ -38,12 +38,10 @@ def send_task_to_worker(worker_address, task):
         request = scheduler_pb2.TaskRequest(
             id=task.id,
             batch=task.batch,
-            dataset=task.dataset,
             start=task.start,
             end=task.end,
             partitioned=task.partitioned,
-            time = task.time,
-            last = task.last
+            time = task.time
         )
 
         # Send request
@@ -63,7 +61,7 @@ def dispatch_tasks():
         with task_lock:
             for worker_id in task_queues:
                 if workers[worker_id]['free'] and len(task_queues[worker_id]) > 0:
-                    task = task_queues[worker_id].pop(0)
+                    task = task_queues[worker_id].pop()
                     success = send_task_to_worker(workers[worker_id]['address'], task)
                     if success:
                         workers[worker_id]['free'] = False
@@ -78,7 +76,7 @@ def schedule_tasks():
     while True:
         with task_lock:
             while len(unallocated_tasks) > 0:
-                task = unallocated_tasks.pop(0)
+                task = unallocated_tasks.pop()
                 task_queues[prev_worker_id].push(task)
                 prev_worker_id = (prev_worker_id + 1) % len(workers)
         time.sleep(10)
