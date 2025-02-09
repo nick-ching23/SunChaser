@@ -1,7 +1,9 @@
-FROM python:3.9
+FROM docker:latest
 
 WORKDIR /app
 COPY . .
+RUN apk add --no-cache bash  
+
 RUN pip install --no-cache-dir grpcio grpcio-tools
 
 EXPOSE 50051 

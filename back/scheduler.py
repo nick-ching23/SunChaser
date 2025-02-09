@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from google.cloud import storage
 from collections import defaultdict
 from concurrent import futures
+from gcs import upload_blob, delete_blob
 import grpc
 import scheduler_pb2
 import scheduler_pb2_grpc
@@ -14,12 +15,13 @@ import random
 
 app = Flask(__name__)
 
-GCS_BUCKET_NAME = "your-bucket-name"
-GCS_FOLDER = "dataset-folder/"
-workers = []
+GCS_BUCKET_NAME = "sun-chaser-gcs"
+workers = [{'name': "south_carolina", 
+            'address': "104.196.151.216",
+            'free': True}]
 registry_name = ""
 repo_name = "sunchaser"
-registry_memory = set()
+registry_memory = {}
 ids = set()
 
 task_lock = threading.Lock()
@@ -53,29 +55,15 @@ class Task:
         self.time = time
         self.last = last
     
-    def can_merge(self, other_task):
-        if self.id != other_task.id or self.partitioned != other_task.partitioned:
-            return False
-        if self.partitioned == False and self.end != other_task.start:
-            return False
-        return True
-    
-    def merge(self, other_task):
-        if not self.can_merge(self, other_task):
-            return None
-        merged_task = Task(self.id, self.batch + other_task.batch, self.dataset, self.start, other_task.end, self.partitioned, self.time, other_task.last) 
-        return merged_task
-
 class PriorityQueue:
     def __init__(self):
         self.queue = []
 
     def push(self, task):
-        heapq.heappush(self.queue, (-task.time, -task.start, task))
+        heapq.heappush(self.queue, (task.time, task.start, task))
 
     def pop(self):
         if self.queue:
-            # Remove the task and return the original task object
             return heapq.heappop(self.queue)[2]
         return None
 
@@ -135,6 +123,7 @@ def dispatch_tasks():
                     task = task_queues[worker_id].pop(0)
                     success = send_task_to_worker(workers[worker_id]['address'], task)
                     if success:
+                        workers[worker_id]['free'] = False
                         print(f"Task sent successfully to {workers[worker_id]['name']}")
                     else:
                         print(f"Failed to send task to {workers[worker_id]['name']}")
@@ -181,7 +170,7 @@ def process_and_push_docker_image(docker_file, tag):
 
         subprocess.run(f"docker push {full_image_name}", shell=True, check=True)
 
-        registry_memory.add((tag, full_image_name))
+        registry_memory[tag] = full_image_name
 
         return {"message": "Docker image pushed successfully!", "image": full_image_name}
 
@@ -210,12 +199,12 @@ def submit_task():
         
         num_tasks = num_executions // batch_size + 1
         cumulative_batch = 0
-        timestamp = time.time()
         with id_lock:
             id = random.randint(0, 99999999)
             while id in ids:
                 id = random.randint(0, 99999999)
             ids.add(id)
+            timestamp = time.time()
         with docker_lock:
             process_and_push_docker_image(docker_file, id)
         with task_lock:
@@ -242,18 +231,9 @@ def upload_dataset():
     dataset_file = request.files['dataset']
     dataset_filename = dataset_file.filename
 
-    # Define GCS path
-    gcs_path = f"{GCS_FOLDER}{dataset_filename}"
-
     try:
-        bucket = storage_client.bucket(GCS_BUCKET_NAME)
-        blob = bucket.blob(gcs_path)
-
-        blob.upload_from_file(dataset_file, content_type=dataset_file.content_type)
-
-        #We need something that actually saves this url
-        gcs_url = f"gs://{GCS_BUCKET_NAME}/{gcs_path}"
-        return jsonify({"message": "Dataset uploaded successfully", "gcs_url": gcs_url}), 200
+        upload_blob(GCS_BUCKET_NAME, dataset_filename, dataset_filename)
+        return jsonify({"message": "Dataset uploaded successfully", "gcs_url" :f"gs://{GCS_BUCKET_NAME}/{dataset_filename}"}), 200
     except Exception as e:
         return jsonify({"error": f"Failed to upload dataset: {str(e)}"}), 500
 
@@ -264,7 +244,7 @@ if __name__ == '__main__':
     grpc_thread = threading.Thread(target=run_grpc_server, daemon=True)
     grpc_thread.start()
     #test
-    task = Task()
-    send_task_to_worker("104.196.151.216", task)
-    # run_flask
+    # task = Task()
+    # send_task_to_worker("104.196.151.216", task)
+    # run_flask()
     pass

@@ -14,9 +14,18 @@ spec:
     spec:
       containers:
         - name: worker
-          image: willma17/worker-service:latest  # Use your Docker image
+          image: willma17/worker-service:latest  # Your Docker image
           ports:
             - containerPort: 50051
           env:
             - name: SCHEDULER_ADDRESS
-              value: "192.168.1.100:50052"  # Address of the local scheduler
+              value: "192.168.1.100:50052"  # Make sure this is reachable
+          securityContext:
+            privileged: true  # Allows running Docker inside the worker pod
+          volumeMounts:
+            - mountPath: /var/run/docker.sock  # Allows the worker to use Docker
+              name: docker-sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
