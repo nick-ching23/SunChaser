@@ -55,12 +55,15 @@ def dispatch_tasks():
         time.sleep(2)
 
 def schedule_tasks():
-    #cyclic scheduling for now
-    prev_worker_id = 0
     while True:
+        recent_info = scheduler.retriever.info[-1]
+        best_region = min(recent_info, key=lambda k: recent_info[k])
+        for worker_id in task_queues:
+            if workers[worker_id]['name'] == best_region:
+                best_worker = worker_id
         with task_lock:
             while len(unallocated_tasks) > 0:
                 task = unallocated_tasks.pop()
-                task_queues[prev_worker_id].push(task)
-                prev_worker_id = (prev_worker_id + 1) % len(workers)
+                task_queues[best_worker].push(task)
         time.sleep(2)
+    

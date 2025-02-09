@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from utils import Task
+from carbon import carbon_info_retriever
 import scheduling_utils
 import time
 import threading
@@ -13,6 +14,7 @@ app = Flask(__name__)
 start_and_end_times = {}
 remaining_batches_per_task = {}
 ids = set()
+retriever = carbon_info_retriever.CarbonInfoRetriever()
 
 docker_lock = threading.Lock()
 file_lock = threading.Lock()
@@ -113,4 +115,5 @@ if __name__ == '__main__':
     task_dispatch_thread.start()
     schedule_thread = threading.Thread(target=scheduling_utils.schedule_tasks, daemon=True)
     schedule_thread.start()
+    retriever.start_monitoring()
     run_flask()
