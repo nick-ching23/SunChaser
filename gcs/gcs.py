@@ -49,9 +49,3 @@ def delete_blob(bucket_name, blob_name):
 
     print(f"Blob {blob_name} deleted.")
 
-
-
-bucket_name = "sun-chaser-gcs"
-source_file_name = "../../Mnist.py"
-destination_blob_name = "Mnist.py"
-delete_blob(bucket_name, destination_blob_name)
