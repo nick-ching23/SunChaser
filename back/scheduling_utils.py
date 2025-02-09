@@ -80,5 +80,5 @@ def schedule_tasks():
             while len(unallocated_tasks) > 0:
                 task = unallocated_tasks.pop(0)
                 task_queues[prev_worker_id].push(task)
-                prev_working_id = (prev_worker_id + 1) % len(workers)
+                prev_worker_id = (prev_worker_id + 1) % len(workers)
         time.sleep(10)

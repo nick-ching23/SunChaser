@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from utils import Task, PriorityQueue
 from docker_utils import delete_image, process_and_push_docker_image
-from google.cloud import storage
 from collections import defaultdict
 from concurrent import futures
 import scheduling_utils
@@ -24,7 +23,6 @@ ids = set()
 
 docker_lock = threading.Lock()
 file_lock = threading.Lock()
-storage_client = storage.Client()
 
 class SchedulerService(scheduler_pb2_grpc.SchedulerServiceServicer):
     def ReportStatus(self, request, context):
@@ -69,18 +67,15 @@ def submit_task():
 
     config_file = request.files['config']
     docker_file = request.files['dockerfile']
-    dataset_link = request.form['dataset_link']
 
     try:
         config_content = config_file.read().decode('utf-8')
         config_dict = json.loads(config_content)
         
         batch_size = config_dict['batch_size']
-        num_executions = config_dict['num_executions']
+        num_batches = config_dict['num_batches']
         should_split = config_dict['should_split']
         
-        num_tasks = num_executions // batch_size + 1
-        cumulative_batch = 0
         with scheduling_utils.id_lock:
             id = random.randint(0, 99999999)
             while id in ids:
@@ -90,17 +85,21 @@ def submit_task():
         with docker_lock:
             process_and_push_docker_image(docker_file, id, registry_memory)
         with scheduling_utils.task_lock:
-            for i in range(num_tasks):
-                curr_batch_size = min(batch_size, num_executions - i * batch_size) 
+            for i in range(num_batches):
                 if should_split:
-                    task = Task(id, curr_batch_size, dataset_link, cumulative_batch / num_executions, (cumulative_batch + curr_batch_size) / num_executions, True, timestamp, i == num_tasks - 1)
-                    cumulative_batch += curr_batch_size
+                    task = Task(id, batch_size, i / num_batches, (i + 1) / num_batches, True, timestamp, i == num_batches - 1)
                 else:
-                    task = Task(id, curr_batch_size, dataset_link, 0, 1, False, timestamp, i == num_tasks - 1)
+                    task = Task(id, batch_size, 0, 1, False, timestamp, i == num_batches - 1)
                 scheduling_utils.unallocated_tasks.push(task)
         return jsonify({"message": "Task submitted", "task_id": task.id}), 202
     except json.JSONDecodeError:
         return jsonify({"error": "Invalid JSON file"}), 400
+
+
+    
+@app.route('/submit_file', methods=['POST'])
+def submit_file():
+    output_file = request.files['output_file']
 
 def run_flask():
     app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

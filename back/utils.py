@@ -1,10 +1,9 @@
 import heapq
 
 class Task:
-    def __init__(self, id = -1, batch = 0, dataset = None, start = 0, end = 0, partitioned = False, time = float('inf'), last = False):
+    def __init__(self, id = -1, batch = 0, start = 0, end = 0, partitioned = False, time = float('inf'), last = False):
         self.id = id
         self.batch = batch
-        self.dataset = dataset
         self.start = start
         self.end = end
         self.partitioned = partitioned

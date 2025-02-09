@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fscheduler.proto\x12\tscheduler\"\x86\x01\n\x0bTaskRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\r\n\x05\x62\x61tch\x18\x02 \x01(\x05\x12\x0f\n\x07\x64\x61taset\x18\x03 \x01(\t\x12\r\n\x05start\x18\x04 \x01(\x02\x12\x0b\n\x03\x65nd\x18\x05 \x01(\x02\x12\x13\n\x0bpartitioned\x18\x06 \x01(\x08\x12\x0c\n\x04time\x18\x07 \x01(\x01\x12\x0c\n\x04last\x18\x08 \x01(\x08\"0\n\x0cTaskResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\"\xa2\x02\n\rStatusRequest\x12\x13\n\x0bworker_name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\t\x12\r\n\x05\x62\x61tch\x18\x04 \x01(\x05\x12\x0f\n\x07\x64\x61taset\x18\x05 \x01(\t\x12\r\n\x05start\x18\x06 \x01(\x02\x12\x0b\n\x03\x65nd\x18\x07 \x01(\x02\x12\x13\n\x0bpartitioned\x18\x08 \x01(\x08\x12\x0c\n\x04time\x18\t \x01(\x01\x12\x0c\n\x04last\x18\n \x01(\x08\x12?\n\x0cruntime_info\x18\x0b \x03(\x0b\x32).scheduler.StatusRequest.RuntimeInfoEntry\x1a\x32\n\x10RuntimeInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"!\n\x0eStatusResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2\x97\x01\n\x10SchedulerService\x12>\n\x0bProcessTask\x12\x16.scheduler.TaskRequest\x1a\x17.scheduler.TaskResponse\x12\x43\n\x0cReportStatus\x12\x18.scheduler.StatusRequest\x1a\x19.scheduler.StatusResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fscheduler.proto\x12\tscheduler\"u\n\x0bTaskRequest\x12\n\n\x02id\x18\x01 \x01(\x05\x12\r\n\x05\x62\x61tch\x18\x02 \x01(\x05\x12\r\n\x05start\x18\x03 \x01(\x02\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x02\x12\x13\n\x0bpartitioned\x18\x05 \x01(\x08\x12\x0c\n\x04time\x18\x06 \x01(\x01\x12\x0c\n\x04last\x18\x07 \x01(\x08\"0\n\x0cTaskResponse\x12\x0f\n\x07message\x18\x01 \x01(\t\x12\x0f\n\x07success\x18\x02 \x01(\x08\"\xe9\x01\n\rStatusRequest\x12\x13\n\x0bworker_name\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\x05\x12\x0c\n\x04last\x18\x04 \x01(\x08\x12\x12\n\nbegin_time\x18\x05 \x01(\x01\x12\x10\n\x08\x65nd_time\x18\x06 \x01(\x01\x12?\n\x0cruntime_info\x18\x07 \x03(\x0b\x32).scheduler.StatusRequest.RuntimeInfoEntry\x1a\x32\n\x10RuntimeInfoEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\"!\n\x0eStatusResponse\x12\x0f\n\x07message\x18\x01 \x01(\t2\x97\x01\n\x10SchedulerService\x12>\n\x0bProcessTask\x12\x16.scheduler.TaskRequest\x1a\x17.scheduler.TaskResponse\x12\x43\n\x0cReportStatus\x12\x18.scheduler.StatusRequest\x1a\x19.scheduler.StatusResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,16 +33,16 @@ if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._loaded_options = None
   _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._serialized_options = b'8\001'
-  _globals['_TASKREQUEST']._serialized_start=31
-  _globals['_TASKREQUEST']._serialized_end=165
-  _globals['_TASKRESPONSE']._serialized_start=167
-  _globals['_TASKRESPONSE']._serialized_end=215
-  _globals['_STATUSREQUEST']._serialized_start=218
-  _globals['_STATUSREQUEST']._serialized_end=508
-  _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._serialized_start=458
-  _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._serialized_end=508
-  _globals['_STATUSRESPONSE']._serialized_start=510
-  _globals['_STATUSRESPONSE']._serialized_end=543
-  _globals['_SCHEDULERSERVICE']._serialized_start=546
-  _globals['_SCHEDULERSERVICE']._serialized_end=697
+  _globals['_TASKREQUEST']._serialized_start=30
+  _globals['_TASKREQUEST']._serialized_end=147
+  _globals['_TASKRESPONSE']._serialized_start=149
+  _globals['_TASKRESPONSE']._serialized_end=197
+  _globals['_STATUSREQUEST']._serialized_start=200
+  _globals['_STATUSREQUEST']._serialized_end=433
+  _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._serialized_start=383
+  _globals['_STATUSREQUEST_RUNTIMEINFOENTRY']._serialized_end=433
+  _globals['_STATUSRESPONSE']._serialized_start=435
+  _globals['_STATUSRESPONSE']._serialized_end=468
+  _globals['_SCHEDULERSERVICE']._serialized_start=471
+  _globals['_SCHEDULERSERVICE']._serialized_end=622
 # @@protoc_insertion_point(module_scope)
